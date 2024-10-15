@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  name          String
+  role          Role      @default(STUDENT)
+  cpf           String?   @unique
+  rg            String?
+  address       String?
+  phoneNumber   String?
+  fatherName    String?
+  motherName    String?
+  grades        Grade[]
+  payments      Payment[]
+  enrollments   Enrollment[]
+}
+
+model Grade {
+  id        Int      @id @default(autoincrement())
+  value     Float
+  subjectId Int
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id        Int           @id @default(autoincrement())
+  amount    Float
+  status    PaymentStatus @default(NOT_PAID)
+  userId    Int
+  user      User          @relation(fields: [userId], references: [id])
+  classId   Int
+  class     Class         @relation(fields: [classId], references: [id])
+  dueDate   DateTime
+  paidAt    DateTime?
+  createdAt DateTime      @default(now())
+}
+
+model Subject {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  grades      Grade[]
+  classes     Class[]
+}
+
+model Class {
+  id              Int        @id @default(autoincrement())
+  title           String
+  description     String?
+  startDate       DateTime
+  endDate         DateTime
+  numberOfPayments Int
+  paymentAmount   Float
+  paymentDueDay   Int
+  lateFee         Float
+  subjectId       Int
+  subject         Subject    @relation(fields: [subjectId], references: [id])
+  payments        Payment[]
+  enrollments     Enrollment[]
+}
+
+model Enrollment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  classId   Int
+  class     Class    @relation(fields: [classId], references: [id])
+  enrolledAt DateTime @default(now())
+
+  @@unique([userId, classId])
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum PaymentStatus {
+  PAID
+  NOT_PAID
+  NOT_DUE_YET
+}
